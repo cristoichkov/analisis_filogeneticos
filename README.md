@@ -819,7 +819,7 @@ Como existen:
 ```
 
 ```bash
-apptainer exec ../../contenedores/mrbayes_*.sif \
+apptainer exec ../../contenedores/mrbayes_3.2.7.sif \
 mpirun -np 8 \
 mb alacranes_concat.nex 
 ```
