@@ -25,6 +25,7 @@ cd analisis_filogeneticos
 Para esta práctica agregaremos subdirectorios por etapa:
 
 ```bash
+mkdir -p meta
 mkdir -p data/alacranes
 mkdir -p out/01_iqtree
 mkdir -p out/02_concatenacion
@@ -119,7 +120,6 @@ IQ-TREE puede analizar varios alineamientos como particiones independientes sin 
 Crear:
 
 ```bash
-mkdir -p meta
 nano meta/particiones_iqtree.nex
 ```
 
