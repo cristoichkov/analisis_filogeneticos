@@ -819,9 +819,9 @@ Como existen:
 ```
 
 ```bash
-mpirun -np 4 \
-    apptainer exec ../../contenedores/mrbayes_*.sif \
-    mb alacranes_concat.nex
+apptainer exec ../../contenedores/mrbayes_*.sif \
+mpirun -np 8 \
+mb alacranes_concat.nex 
 ```
 
 > `nchains=4` y `-np 4` no significan lo mismo.
