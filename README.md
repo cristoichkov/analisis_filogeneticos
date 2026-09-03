@@ -19,7 +19,6 @@ Todos los pasos se ejecutan directamente en la terminal.
 
 ```bash
 git clone https://github.com/cristoichkov/analisis_filogeneticos.git
-mkdir -p analisis_filogeneticos/{out,contenedores}
 cd analisis_filogeneticos
 ```
 
