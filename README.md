@@ -15,12 +15,11 @@ Esta práctica muestra un flujo de trabajo en terminal para:
 Todos los pasos se ejecutan directamente en la terminal.
 ---
 
-# 1. Crear el proyecto
-
-Desde el directorio donde quieras trabajar:
+# 1. Descargar el epositorios
 
 ```bash
-mkdir -p analisis_filogeneticos/{data,out,bin,contenedores}
+https://github.com/cristoichkov/analisis_filogeneticos.git
+mkdir -p analisis_filogeneticos/{out,contenedores}
 cd analisis_filogeneticos
 ```
 
