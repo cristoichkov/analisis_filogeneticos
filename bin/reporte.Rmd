@@ -26,7 +26,7 @@ library(ape)
 
 
 # Archivo obtenido de iqtree 
-f_raxml <- "../out/iqtree/concatenado/alacranes.contree"
+f_raxml <- "../out/01_iqtree/alacranes.contree"
 
 # Lectura con ape
 ml_phylo <- read.iqtree(f_raxml)
@@ -324,6 +324,21 @@ ml_p_adj +
   geom_tiplab() 
 ```
 
+## 🦂 Incorporar metadatos taxonómicos al árbol
+
+Además de representar la topología y los valores de soporte, podemos asociar **metadatos** a las terminales del árbol.
+
+En este ejemplo utilizaremos la clasificación taxonómica de cada género para asignar una **familia** a cada especie.
+
+Primero construiremos una tabla con dos columnas:
+
+- `genus`: género del taxón.
+- `family`: familia a la que pertenece.
+
+Después extraeremos automáticamente el género a partir del nombre de cada terminal del árbol y uniremos esa información con la tabla taxonómica.
+
+Esto nos permitirá utilizar la variable `family` para modificar posteriormente la apariencia de las etiquetas en `ggtree`.
+
 
 ```{r}
 taxonomia <- tibble(
@@ -384,6 +399,26 @@ datos_tips <- tibble(
 
 datos_tips 
 ```
+
+### 🎨 Colorear las terminales según la familia
+
+Una vez asociada la información taxonómica a cada terminal, podemos incorporarla al objeto de `ggtree` mediante el operador:
+
+```{r}
+%<+%
+```
+
+Este operador permite añadir un `data.frame` o `tibble` con metadatos al árbol utilizando la columna `label` como identificador de las terminales.
+
+Después definiremos una paleta de colores para cada familia y utilizaremos `geom_tiplab()` para representar los nombres de las especies dentro de una etiqueta coloreada.
+
+En esta figura:
+
+- el **color de fondo** identifica la familia;
+- el nombre de la terminal se muestra en **blanco y negritas**;
+- la leyenda indica qué color corresponde a cada familia.
+
+Esto facilita comparar visualmente la **clasificación taxonómica** con los clados recuperados en el árbol filogenético.
 
 ```{r, message=FALSE, warning=FALSE, fig.width=8, fig.height=10, dpi=300}
 ml_p_tax <- ml_p_adj %<+% datos_tips
