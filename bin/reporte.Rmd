@@ -1,0 +1,458 @@
+---
+title: "tree"
+author: "Cristian_cervantes"
+date: "2026-09-02"
+output: html_document
+---
+
+## 🌳 Visualización de árboles filogenéticos
+
+La **visualización** es clave en el análisis filogenético porque nos permite:
+
+🔎 **Explorar** rápidamente la topología del árbol.\
+🧩 **Manipular** el árbol para **resaltar procesos evolutivos** que podrían explicar su topología.\
+📊 **Comunicar** resultados de manera clara.\
+🖼️ **Generar figuras** listas para publicación.
+
+En **R** contamos con dos enfoques principales:
+
+## Visualización con `R base`
+
+```{r}
+library(tidyverse)
+library(ggtree)
+library(treeio)
+library(ape)
+
+
+# Archivo obtenido de iqtree 
+f_raxml <- "../out/iqtree/concatenado/alacranes.contree"
+
+# Lectura con ape
+ml_phylo <- read.iqtree(f_raxml)
+
+# geom_tiplab() agregra nombres de terminales
+# size controla el tamaño del texto
+ml_p <- ggtree(ml_phylo) 
+
+ml_p +
+  geom_tiplab()
+```
+
+## 📊 Estructura de un objeto `treedata`
+
+Cuando cargamos un árbol generado por **IQ-TREE** con la función:
+
+```{r}
+# Estructura básica de un árbol phylo
+str(ml_phylo)
+```
+obtenemos un objeto de clase `treedata`.
+
+Este objeto guarda tanto la estructura del árbol como información adicional asociada a sus nodos.
+
+### `@phylo`
+
+Contiene el árbol en formato `phylo` de **ape**.
+
+Dentro de este componente se encuentran:
+
+- `tip.label`: nombres de las terminales.
+- `edge`: conexiones entre nodos.
+- `edge.length`: longitudes de las ramas.
+- `Nnode`: número de nodos internos.
+- `node.label`: etiquetas asociadas a los nodos.
+
+Por ejemplo:
+
+```{r}
+ml_phylo@phylo$tip.label
+```
+
+muestra los nombres de las especies.
+
+### `@data`
+
+Contiene información adicional asociada a los nodos internos.
+
+En este árbol aparecen:
+
+```text
+node
+SH_aLRT
+UFboot
+```
+
+donde:
+
+- `node`: número del nodo interno.
+- `SH_aLRT`: soporte SH-aLRT.
+- `UFboot`: soporte Ultrafast Bootstrap.
+
+Podemos consultarlo con:
+
+```{r}
+#  Transforma en un data.frame
+ml_df <- ml_p$data
+
+# Ver las primeras 10 lineas
+head(ml_df, 10)
+```
+
+### `edge.length`
+
+Las longitudes de rama se encuentran dentro de `@phylo`:
+
+```r
+ml_phylo@phylo$edge.length
+```
+
+En árboles de máxima verosimilitud suelen representar el número esperado de sustituciones por sitio.
+
+### `tip.label`
+
+Contiene los nombres de las terminales:
+
+```r
+ml_phylo@phylo$tip.label
+```
+
+Por ejemplo:
+
+```text
+Paravaejovis_schwenkmeyeri
+Paravaejovis_spinigerus
+Kuarapu_purhepecha
+...
+```
+## 🖼️ Ajustar el lienzo: ejes, límites y márgenes
+
+📐 **Cómo funcionan los ejes en ggtree**
+
+-   **Eje X (`x`)** → representa la **distancia acumulada desde la raíz**.
+
+    -   Si tu árbol es de Máxima Verosimilitud o inferencia bayesiana, X suele ser **sustituciones por sitio**.
+
+    -   Si es ultramétrico (ej. BEAST), X puede interpretarse como **tiempo**.
+
+-   **Eje Y (`y`)** → es un índice que asigna ggtree automáticamente a cada terminal, de arriba a abajo.
+
+    -   No es biológico, solo indica la posición vertical de cada taxón.
+    
+```{r, message=FALSE, warning=FALSE, fig.width=8, fig.height=10, dpi=300}
+
+# Rango en X (distancia/tiempo)
+# xr → te dice de dónde a dónde llega el árbol en horizontal.
+xr <- range(ml_df$x, na.rm = TRUE)
+
+# Rango en Y (posición de tips/nodos)
+# yr → te da el número mínimo y máximo de posiciones verticales (básicamente cuántos tips).
+yr <- range(ml_df$y, na.rm = TRUE)
+
+# 5% de aire a izquierda/derecha
+pad_left  <- 0.05 * diff(xr)
+pad_right <- 0.05 * diff(xr)
+
+ ggtree(ml_phylo) +
+  # Eje X visible y ajustado
+  scale_x_continuous(
+    name   = "Distancia (sust./sitio)", # cambia el nombre si es tiempo
+    breaks = pretty(xr, n = 6),
+    limits = c(xr[1] - pad_left, xr[2] + pad_right),
+    expand = c(0, 0)  # usamos limits, no expand
+  ) +
+  # Eje Y visible con ticks
+  scale_y_continuous(
+    name   = "Número de taxa",
+    breaks = pretty(yr, n = 5),
+    expand = expansion(mult = c(0.02, 0.04))
+  ) + 
+  # Mostrar ticks y líneas (ggtree los oculta por default)
+  theme(
+    axis.line.y  = element_line(),
+    axis.ticks.y = element_line(),
+    axis.text.y  = element_text(size = 8),
+    axis.title.y = element_text(size = 10),
+    axis.line.x  = element_line(),
+    axis.ticks.x = element_line(),
+    axis.text.x  = element_text(size = 8),
+    axis.title.x = element_text(size = 10)
+    ) 
+```
+
+👉 Para que las **etiquetas no se corten**, el árbol sea **legible** y la figura mantenga proporciones al exportar.
+
+🔑 Pasos básicos:
+
+-   📐 Calcular rangos en `x` y `y` desde `ggtree(tr)$data`.
+
+-   ➕ Agregar un poco de **aire a la derecha** (`pad_x`) para las etiquetas.
+
+-   📏 Usar `scale_x_continuous` y `scale_y_continuous` con `expand=0` para fijar límites exacto
+
+-   ✂️ `coord_cartesian(clip="off")` → deja que sobresalgan etiquetas largas.
+
+-   ↔️ `plot.margin` → agrega margen extra si se cortan textos.
+
+-   📊 `geom_treescale` → coloca una barra de escala en coordenadas reales.
+
+👉 En pocas líneas: **controlas el espacio visible, evitas recortes y aseguras consistencia en tus figuras.**
+
+```{r, message=FALSE, warning=FALSE, fig.width=8, fig.height=10, dpi=300}
+# obtener el numero de terminales
+ntips_s <- ml_df %>%
+    filter(isTip == "TRUE") %>%
+    nrow()
+
+# Aire extra en X (5% del rango) para no cortar etiquetas
+pad_x1 <- 0.05 * diff(xr)
+pad_x2 <- 0.3 * diff(xr)
+
+
+ml_p_adj <- ml_p +
+  geom_treescale(y = -1.5, x = 0.12, width = 0.02) + # escala sustituciones por sitio.
+  scale_x_continuous(limits = c(xr[1] - pad_x1, xr[2] + pad_x2),
+                     expand = c(0, 0)) +   # Limites exactos sin padding automático
+  scale_y_continuous(limits = c(-5, ntips_s + 3),
+                     expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +          # Permitir etiquetas largas fuera del panel
+  theme(plot.margin = margin(5.5, 25, 5.5, 5.5)) # Más aire a la derecha
+
+ml_p_adj +
+  geom_tiplab()
+```
+## 🛡️ Soportes de nodos en IQ-TREE
+
+En un árbol inferido por **Máxima Verosimilitud (ML)** con **IQ-TREE**, los nodos internos pueden llevar distintos valores de soporte que permiten evaluar qué tan consistente es cada agrupación.
+
+En esta práctica calculamos dos medidas:
+
+- **SH-aLRT**
+- **Ultrafast Bootstrap (UFBoot)**
+
+Estas medidas no representan exactamente lo mismo, pero ambas ayudan a evaluar la **confianza de los clados** recuperados en el árbol.
+
+### 🔹 SH-aLRT
+
+El **SH-like approximate likelihood ratio test** evalúa si una rama interna está bien apoyada al comparar la hipótesis que contiene esa rama contra alternativas cercanas.
+
+De forma práctica:
+
+- **SH-aLRT ≥ 80** → soporte fuerte.
+- **SH-aLRT < 80** → soporte más débil o incierto.
+
+### 🔹 Ultrafast Bootstrap (UFBoot)
+
+El **Ultrafast Bootstrap** es una aproximación rápida al bootstrap filogenético tradicional.
+
+Se generan muchas réplicas de los datos y se evalúa con qué frecuencia aparece un clado en esas réplicas.
+
+De forma práctica:
+
+- **UFBoot ≥ 95** → soporte fuerte.
+- **UFBoot < 95** → soporte más débil o incierto.
+
+> Los valores de SH-aLRT y UFBoot no deben interpretarse con el mismo umbral.
+
+En IQ-TREE es común reportar ambos soportes de forma conjunta, por ejemplo:
+
+```text
+95/98
+```
+
+donde:
+
+```text
+95 = SH-aLRT
+98 = UFBoot
+```
+
+👉 Un nodo con valores altos en ambos criterios tiene un respaldo más sólido que uno apoyado únicamente por una de las dos medidas.
+
+```{r, message=FALSE, warning=FALSE, fig.width=8, fig.height=10, dpi=300}
+ml_p_adj +
+  geom_tiplab() +
+  geom_text2(
+    aes(
+      label = paste0(SH_aLRT, "/", UFboot),
+      subset = !isTip & !is.na(SH_aLRT) & !is.na(UFboot)
+    ),
+    size = 2.5,
+    vjust = -0.3,
+    hjust = 1.2
+  ) 
+```
+
+### B) Puntos según umbrales de UFBoot
+
+Para simplificar la visualización podemos representar el soporte **Ultrafast Bootstrap (UFBoot)** mediante puntos:
+
+- **UFBoot ≥ 95**: círculos negros → soporte fuerte
+- **UFBoot 80–94**: círculos grises → soporte moderado
+- **UFBoot < 80**: círculos blancos → soporte bajo
+
+```{r, message=FALSE, warning=FALSE, fig.width=8, fig.height=10, dpi=300}
+ml_p_adj <- ml_p_adj +
+
+  # Negro: soporte fuerte
+  geom_point2(
+    aes(subset = !isTip & !is.na(UFboot) & UFboot >= 95),
+    size = 2.5,
+    shape = 16,
+    color = "black"
+  ) +
+
+  # Gris: soporte moderado
+  geom_point2(
+    aes(subset = !isTip & !is.na(UFboot) &
+                   UFboot >= 80 & UFboot < 95),
+    size = 2.5,
+    shape = 16,
+    color = "grey40"
+  ) +
+
+  # Blanco: soporte bajo
+  geom_point2(
+    aes(subset = !isTip & !is.na(UFboot) & UFboot < 80),
+    size = 2.5,
+    shape = 21,
+    fill = "white",
+    color = "black"
+  )
+
+ml_p_adj +
+  geom_tiplab() 
+```
+
+
+```{r}
+taxonomia <- tibble(
+  genus = c(
+    "Vaejovis",
+    "Smeringurus",
+    "Paruroctonus",
+    "Pseudouroctonus",
+    "Kovarikia",
+    "Konetontli",
+    "Mesomexovis",
+    "Chihuahuanus",
+    "Thorellus",
+    "Kuarapu",
+    "Paravaejovis",
+    "Serradigitus",
+    "Uroctonites",
+    "Uroctonus",
+    "Hadrurus",
+    "Diplocentrus",
+    "Urodacus",
+    "Scorpio",
+    "Liocheles"
+  ),
+  family = c(
+    "Vaejovidae",
+    "Vaejovidae",
+    "Vaejovidae",
+    "Vaejovidae",
+    "Vaejovidae",
+    "Vaejovidae",
+    "Vaejovidae",
+    "Vaejovidae",
+    "Vaejovidae",
+    "Vaejovidae",
+    "Vaejovidae",
+    "Vaejovidae",
+    "Vaejovidae",
+    "Uroctoninae",
+    "Hadruridae",
+    "Diplocentridae",
+    "Urodacidae",
+    "Scorpionidae",
+    "Hormuridae"
+  )
+)
+
+datos_tips <- tibble(
+  label = ml_phylo@phylo$tip.label
+) |>
+  mutate(
+    genus = sub("_.*", "", label)
+  ) |>
+  left_join(
+    taxonomia,
+    by = "genus"
+  )
+
+datos_tips 
+```
+
+```{r, message=FALSE, warning=FALSE, fig.width=8, fig.height=10, dpi=300}
+ml_p_tax <- ml_p_adj %<+% datos_tips
+
+pal_family <- c(
+  "Vaejovidae"    = "#507A8B",
+  "Uroctoninae"   = "#8A9A5B",
+  "Hadruridae"    = "#C68B59",
+  "Diplocentridae"= "#9B6A8F",
+  "Urodacidae"    = "#669966",
+  "Scorpionidae"  = "#B56A6A",
+  "Hormuridae"    = "#7A7A7A"
+)
+
+ml_p_tax +
+  geom_tiplab(
+    aes(
+      fill = family,
+      label = label
+    ),
+    color = "white",
+    fontface = "bold",
+    geom = "label",
+    label.size = 0,
+    label.padding = unit(0.12, "lines"),
+    size = 4,
+    show.legend = TRUE
+  ) +
+  scale_fill_manual(
+    values = pal_family,
+    na.value = "white",
+    breaks = c(
+      "Vaejovidae",
+      "Uroctoninae",
+      "Hadruridae",
+      "Diplocentridae",
+      "Urodacidae",
+      "Scorpionidae",
+      "Hormuridae"
+    )
+  ) +
+  guides(
+    fill = guide_legend(
+      title = "Familia",
+      override.aes = list(
+        shape = 15,
+        size = 4,
+        label = NULL,
+        colour = NA,
+        stroke = 0
+      ),
+      label.hjust = 0,
+      title.hjust = 0
+    )
+  ) +
+  theme(
+    legend.position = c(0.05, 0.93),
+    legend.justification = c("left", "top"),
+    legend.background = element_rect(
+      fill = "white",
+      color = "white"
+    ),
+    legend.title = element_text(
+      size = 10,
+      face = "bold"
+    ),
+    legend.text = element_text(
+      size = 9,
+      margin = margin(l = 0)
+    )
+  )
+```
