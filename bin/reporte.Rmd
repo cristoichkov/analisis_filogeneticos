@@ -404,7 +404,7 @@ datos_tips
 
 Una vez asociada la información taxonómica a cada terminal, podemos incorporarla al objeto de `ggtree` mediante el operador:
 
-```{r}
+```text
 %<+%
 ```
 
