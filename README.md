@@ -61,7 +61,7 @@ Para mantener el proyecto organizado sin duplicar archivos grandes, podemos crea
 Por ejemplo, si los contenedores se encuentran en:
 
 ```text
-~/Documents/inferencia_filogenetica/contenedores/
+/srv/bishop/phylogenomics/contenedores/
 ```
 
 desde la raíz de `analisis_filogeneticos` podemos crear:
