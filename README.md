@@ -516,16 +516,9 @@ Por eso cinco loci iniciales pueden terminar agrupados en menos particiones.
 
 # 12. Ejecutar PartitionFinder
 
-Si existe una corrida anterior incompleta:
-
-```bash
-rm -rf out/03_partitionfinder/analysis
-```
-
 Ejecutar con cuatro procesos:
 
 ```bash
-HDF5_USE_FILE_LOCKING=FALSE \
 apptainer exec contenedores/partitionfinder2_2.1.1.sif \
     PartitionFinder.py \
     --processes 4 \
