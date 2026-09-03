@@ -119,6 +119,7 @@ IQ-TREE puede analizar varios alineamientos como particiones independientes sin 
 Crear:
 
 ```bash
+mkdir -p meta
 nano meta/particiones_iqtree.nex
 ```
 
