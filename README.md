@@ -18,7 +18,7 @@ Todos los pasos se ejecutan directamente en la terminal.
 # 1. Descargar el epositorios
 
 ```bash
-https://github.com/cristoichkov/analisis_filogeneticos.git
+git clone https://github.com/cristoichkov/analisis_filogeneticos.git
 mkdir -p analisis_filogeneticos/{out,contenedores}
 cd analisis_filogeneticos
 ```
